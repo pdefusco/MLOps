@@ -3,7 +3,7 @@ from pyspark.sql.functions import *
 from sklearn.datasets import make_circles
 import tensorflow as tf
 import pandas as pd
-import plot_decision_boundary
+from helpers import plot_decision_boundary
 
 # Make 1000 examples
 n_samples = 1000
@@ -83,10 +83,4 @@ pd.DataFrame(history.history).plot()
 plt.title("Model training curves")
 
 
-model.save('my_model.h5')
-
-
-
-
-
-
+model.save('models/my_model.h5')
