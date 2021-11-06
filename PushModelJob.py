@@ -23,7 +23,6 @@ session_id
 # List projects using the default sort and default page size (10)
 client.list_projects()
 
-
 project_id = "dhb0-l4r2-6scy-p2hs"
 
 # cursor also supports search_filter
@@ -47,7 +46,7 @@ model_build_request = cmlapi.CreateModelBuildRequest(
     project_id = project_id,
     model_id = model.id,
     comment = "test comment",
-    file_path = "home/cdsw/model_endpoint.py",
+    file_path = "home/cdsw/new.py",
     function_name = "predict",
     kernel = "python3",
 )
