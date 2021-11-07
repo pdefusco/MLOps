@@ -13,7 +13,7 @@ X, y = make_circles(n_samples,
                     noise=0.03, 
                     random_state=42)
 
-circles = pd.DataFrame({"X0":X[:, 0], "X1":X[:, 1], "label":y})
+circles = pd.DataFrame({"var1":X[:, 0], "var2":X[:, 1], "label":y})
 circles.head()
 
 spark = SparkSession\
