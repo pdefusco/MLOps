@@ -73,7 +73,7 @@ default_args = {
 }
 
 dag = DAG(
-    'LC_customer_scoring',
+    'MLOps',
     default_args=default_args,
     schedule_interval='0 0 12 * *',
     catchup=False,
@@ -88,7 +88,7 @@ batch_load_job = CDEJobRunOperator(
     task_id='batch_load',
     retries=3,
     dag=dag,
-    job_name='batch_load'
+    job_name='BatchLoad'
 )
 
 cml_job = CMLJobRunOperator(

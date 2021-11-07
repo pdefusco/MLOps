@@ -82,3 +82,8 @@ plt.title("Model training curves")
 
 
 model.save('models/my_model.h5')
+
+
+
+
+
