@@ -81,7 +81,7 @@ dag = DAG(
 )
 
 
-start = DummyOperator(task_id='start', dag=dag)
+
 
 
 batch_load_job = CDEJobRunOperator(
@@ -97,7 +97,7 @@ cml_job = CMLJobRunOperator(
     job='TrainModelJob', 
     dag=dag)
 
-
+start = DummyOperator(task_id='start', dag=dag)
 end = DummyOperator(task_id='end', dag=dag)
 
 
