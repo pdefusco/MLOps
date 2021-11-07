@@ -1,0 +1,1 @@
+pip3 install --progress-bar off -r requirements.txt 

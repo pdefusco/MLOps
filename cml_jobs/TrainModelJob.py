@@ -1,9 +1,11 @@
+!pip3 install -r requirements.txt
+
 import pandas as pd
 import tensorflow as tf
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
-from helpers import plot_decision_boundary
-
+from helpers.plot_decision_boundary import *
+import matplotlib.pyplot as plt
 
 spark = SparkSession\
     .builder\
@@ -16,9 +18,12 @@ sparkDF = spark.sql("SELECT * FROM DEFAULT.circles")
 
 df = sparkDF.toPandas()
 
+X = df[["X0", "X1"]].to_numpy()
+y = df["label"].to_numpy()
+
 # Split data into train and test sets
-X_train, y_train = df[:800], df[:800] # 80% of the data for the training set
-X_test, y_test = df[800:], df[800:] # 20% of the data for the test set
+X_train, y_train = X[:800], y[:800] # 80% of the data for the training set
+X_test, y_test = X[800:], y[800:] # 20% of the data for the test set
 
 model = tf.keras.models.load_model('models/my_model.h5')
 
@@ -34,10 +39,10 @@ print(f"Model accuracy on the test set: {100*accuracy:.2f}%")
 plt.figure(figsize=(12, 6))
 plt.subplot(1, 2, 1)
 plt.title("Train")
-helpers.plot_decision_boundary(model, X=X_train, y=y_train)
+plot_decision_boundary(model, X=X_train, y=y_train)
 plt.subplot(1, 2, 2)
 plt.title("Test")
-helpers.splot_decision_boundary(model, X=X_test, y=y_test)
+plot_decision_boundary(model, X=X_test, y=y_test)
 plt.show()
 
 # You can access the information in the history variable using the .history attribute
@@ -46,7 +51,6 @@ pd.DataFrame(history.history)
 # Plot the loss curves
 pd.DataFrame(history.history).plot()
 plt.title("Model training curves")
-
 
 #model.save('my_model.h5')
 

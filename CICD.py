@@ -49,7 +49,9 @@ grandparent_job_body = cmlapi.CreateJobRequest(
     name = "TrainModelJob",
     script = "cml_jobs/TrainModelJob.py",
     kernel = "python3",
-    runtime_identifier = "docker.repository.cloudera.com/cdsw/ml-runtime-workbench-r4.0-standard:2021.09.1-b5"
+    cpu = 4,
+    memory = 12
+    #runtime_identifier = "docker.repository.cloudera.com/cdsw/ml-runtime-workbench-python3.7-standard:2021.09.1-b5"
 )
 # Create this job within the project specified by the project_id parameter.
 grandparent_job = client.create_job(grandparent_job_body, project_id)
@@ -64,7 +66,9 @@ parent_job_body = cmlapi.CreateJobRequest(
     name = "PushModelJob",
     script = "cml_jobs/PushModelJob.py",
     kernel = "python3",
-    runtime_identifier = "docker.repository.cloudera.com/cdsw/ml-runtime-workbench-r4.0-standard:2021.09.1-b5",
+    cpu = 4,
+    memory = 12,
+    #runtime_identifier = "docker.repository.cloudera.com/cdsw/ml-runtime-workbench-python3.7-standard:2021.09.1-b5",
     parent_job_id = grandparent_job.id
 )
 parent_job = client.create_job(parent_job_body, project_id)
@@ -79,8 +83,9 @@ child_job_body = cmlapi.CreateJobRequest(
     name = "InferenceJob",
     script = "cml_jobs/InferenceJob.py",
     kernel = "python3",
-    runtime_identifier = "docker.repository.cloudera.com/cdsw/ml-runtime-workbench-r4.0-standard:2021.09.1-b5",
-
+    cpu = 4,
+    memory = 12,  
+    #runtime_identifier = "docker.repository.cloudera.com/cdsw/ml-runtime-workbench-python3.7-standard:2021.09.1-b5",
     parent_job_id = parent_job.id
 )
 child_job = client.create_job(child_job_body, project_id)

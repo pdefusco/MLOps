@@ -3,7 +3,7 @@ from pyspark.sql.functions import *
 from sklearn.datasets import make_circles
 import tensorflow as tf
 import pandas as pd
-from helpers import plot_decision_boundary
+from helpers.plot_decision_boundary import *
 
 # Make 1000 examples
 n_samples = 1000
@@ -12,8 +12,6 @@ n_samples = 1000
 X, y = make_circles(n_samples, 
                     noise=0.03, 
                     random_state=42)
-
-
 
 circles = pd.DataFrame({"X0":X[:, 0], "X1":X[:, 1], "label":y})
 circles.head()

@@ -1,3 +1,5 @@
+!pip3 install -r requirements.txt
+
 import os
 cluster = os.getenv("CDSW_DOMAIN")
 
@@ -6,6 +8,7 @@ cluster = os.getenv("CDSW_DOMAIN")
 # !pip3 install http://{cluster}/api/v2/python.tar.gz
 !pip3 install https://{cluster}/api/v2/python.tar.gz
 
+  
 from cmlapi.utils import Cursor
 import cmlapi
 import string
@@ -48,8 +51,8 @@ model_build_request = cmlapi.CreateModelBuildRequest(
     comment = "test comment",
     file_path = "models/model_endpoint.py",
     function_name = "predict",
-    kernel = "python3",
-    runtime_identifier = "docker.repository.cloudera.com/cdsw/ml-runtime-workbench-r4.0-standard:2021.09.1-b5"
+    kernel = "python3"
+    #runtime_identifier = "docker.repository.cloudera.com/cdsw/ml-runtime-workbench-python3.8-standard:2021.02.1-b2"
 
 )
 modelBuild = client.create_model_build(

@@ -1,12 +1,14 @@
 import tensorflow as tf
 import cdsw, numpy
 
-model = load_model('models/my_model.h5')
+model = tf.keras.models.load_model('models/my_model.h5')
 
 @cdsw.model_metrics
 def predict(json):
   
-  y_pred = model.predict(json)
+  request = np.array(jsonin["vals"]).reshape(-1,2)
+  
+  y_pred = model.predict(request)
   
   # Track inputs
   cdsw.track_metric("prediction", y_pred)

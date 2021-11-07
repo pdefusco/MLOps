@@ -1,3 +1,5 @@
+!pip3 install -r requirements.txt
+
 import cdsw, time, os, random, json
 import numpy as np
 import pandas as pd
@@ -9,51 +11,27 @@ import copy
 from pyspark.sql import SparkSession
 from pyspark.sql.types import *
 
-
 ### MODEL WARMUP ###
 
+!pip3 install -r requirements.txt
 
-hive_database = os.environ["HIVE_DATABASE"]
-hive_table = os.environ["HIVE_TABLE"]
-hive_table_fq = hive_database + "." + hive_table
+import pandas as pd
+import tensorflow as tf
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import *
+from helpers import plot_decision_boundary
 
-# read data into a Spark DataFrame
-spark = SparkSession.builder.appName("PythonSQL").master("local[*]").getOrCreate()
+spark = SparkSession\
+    .builder\
+    .appName("PythonSQL")\
+    .config("spark.hadoop.fs.s3a.s3guard.ddb.region","us-east-2")\
+    .config("spark.yarn.access.hadoopFileSystems","s3a://gd01-uat2/")\
+    .getOrCreate()
 
-if os.environ["STORAGE_MODE"] == "external":
-    telco_data_raw = spark.sql("SELECT * FROM " + hive_table_fq)
-else:
-    path = "/home/cdsw/raw/WA_Fn-UseC_-Telco-Customer-Churn-.csv"
-    schema = StructType(
-        [
-            StructField("customerID", StringType(), True),
-            StructField("gender", StringType(), True),
-            StructField("SeniorCitizen", StringType(), True),
-            StructField("Partner", StringType(), True),
-            StructField("Dependents", StringType(), True),
-            StructField("tenure", DoubleType(), True),
-            StructField("PhoneService", StringType(), True),
-            StructField("MultipleLines", StringType(), True),
-            StructField("InternetService", StringType(), True),
-            StructField("OnlineSecurity", StringType(), True),
-            StructField("OnlineBackup", StringType(), True),
-            StructField("DeviceProtection", StringType(), True),
-            StructField("TechSupport", StringType(), True),
-            StructField("StreamingTV", StringType(), True),
-            StructField("StreamingMovies", StringType(), True),
-            StructField("Contract", StringType(), True),
-            StructField("PaperlessBilling", StringType(), True),
-            StructField("PaymentMethod", StringType(), True),
-            StructField("MonthlyCharges", DoubleType(), True),
-            StructField("TotalCharges", DoubleType(), True),
-            StructField("Churn", StringType(), True),
-        ]
-    )
-    telco_data_raw = spark.read.csv(
-        path, header=True, sep=",", schema=schema, nullValue="NA"
-    )
+sparkDF = spark.sql("SELECT * FROM DEFAULT.circles")
 
-df = telco_data_raw.toPandas()
+df = sparkDF.toPandas()
+
 
 # Get the various Model CRN details
 HOST = os.getenv("CDSW_API_URL").split(":")[0] + "://" + os.getenv("CDSW_DOMAIN")
@@ -68,8 +46,7 @@ models = cml.get_models({})
 churn_model_details = [
     model
     for model in models
-    if model["name"] == "Churn Model API Endpoint"
-    and model["creator"]["username"] == USERNAME
+    if model["creator"]["username"] == USERNAME
     and model["project"]["slug"] == PROJECT_NAME
 ][0]
 latest_model = cml.get_model(
