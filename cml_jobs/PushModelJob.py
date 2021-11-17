@@ -42,6 +42,7 @@ modelReq = cmlapi.CreateModelRequest(
     name = "demo-model-" + session_id,
     description = "model created for demo",
     project_id = project_id,
+    disable_authentication = True
 )
 model = client.create_model(modelReq, project_id)
 

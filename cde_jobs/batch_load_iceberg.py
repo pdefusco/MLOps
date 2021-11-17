@@ -15,13 +15,23 @@ sparkDF = spark.sql("SELECT * FROM DEFAULT.circles")
 
 newBatchDF = sparkDF.sample(withReplacement=True, fraction=0.5)
 
+newBatchDF.write.insertInto('DEFAULT.circles_iceberg')
+
+
+newBatchDF.write\
+    .format("iceberg")\
+    .mode("overwrite")\
+    .save("db.table")\
+
+
+
 #df_concat = newBatchDF.union(sparkDF)
 
 newBatchDF.sortWithinPartitions("label").write.format("iceberg").insertInto("default.circles_iceberg")
 
 #.mode("append").save("default.circles_iceberg")
 
-#newBatchDF.write.insertInto('DEFAULT.circles_iceberg')
+newBatchDF.write.insertInto('DEFAULT.circles_iceberg')
 
 
 #newBatchDF.write\
