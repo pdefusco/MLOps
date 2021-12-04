@@ -5,3 +5,6 @@ pandas
 pyyaml
 git+https://github.com/fastforwardlabs/cmlbootstrap#egg=cmlbootstrap
 numpy
+petastorm
+seaborn
+handyspark
