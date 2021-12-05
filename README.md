@@ -1,5 +1,17 @@
 # An MLOps Workflow using Cloudera Machine Learning and Cloudera Data Engineering
 
+## Summary
+
+This is a demo of ML Ops in the Cloudera Data Platform using the Machine Learning and Data Engineering Data Services.
+
+This document is divided in two parts. 
+
+1. An introduction to ML Ops and the Cloudera Data Platform  
+2. Guided instructions for deploying the demo scripts and completing the steps to build an end to end ML Ops pipeline
+
+
+# 1. Introduction to ML Ops and the Cloudera Data Platform
+
 Machine learning (ML) plays a critical role in optimizing the
 value of digital transformation. Across industries, organizations seek to leverage the digital revolution for more
 revenue or lower costs.
@@ -381,7 +393,141 @@ To learn more about Enterprise Machine Learning, MLOps and the Cloudera Data Pla
 
 
 
-## Demo Instructions
+# 2. Instructions for Hands On Demo Execution
 
-WIP
+### Summary
+
+The Hands On Steps are divided in three sections.
+
+#### 1. Modeling in the Cloudera Machine Learning Data Service
+* You will perform some basic data exploration with Spark 3.1 and store the data in an Iceberg table. 
+* Next, you will create a ML model baseline for a binary classification task with the Spark ML library in CML Sessions. 
+* Finally, you will deploy the model to a secure REST endpoint and perform inference on it with the CML Jobs and Models features via the CML API (V2).
+
+#### 2. ETL Pipelines in the Cloudera Data Engineering Data Service
+* You will deploy an Airflow DAG in a CDE Virtual Cluster
+* This DAG will use a combination of Cloudera Airflow Operators to perform Spark ETL into a staging table, trigger the same CML Job pipeline you created in part 1 via HTTP, and build a report in the Data Warehouse Data Service
+
+#### 3. Pipeline Reproducibility
+* You will rerun the same Airflow DAG but this time the Spark ETL job will load data that will cause the CML pipeline to fail
+* Next, you will retrieve the original data the Spark ML model was trained on, modify the Spark Pipeline to solve the problem, and rerun the Airflow DAG
+
+#### 4. Future: 
+* Load the staging table from the Operational Database Data Service
+* Using the DW report, create a simple dashboard in Cloudera DataViz 
+
+
+## Step by Step Instructions (WIP)
+
+All notebooks include further instructions, screenshots and detailed explanations about the code 
+Code modifications NOT required
+You can simply execute all the code by launghing a CML Session with the following parameters
+
+Editor: JupyterLab
+Kernel: Python 3.7 or above
+Edition: Standard
+Enable Spark with version 3.1.1
+Resource Profile: 2 vCPU/4GiB Memory - 0 GPUs
+
+Notice that once you have launched the CML Session, JupyterLab will provide a GUI to explore the CML filesystem and open notebooks without launching a new session 
+
+#### 1. Modeling in the Cloudera Machine Learning Data Service
+
+##### 1.1 Create a Model Baseline
+
+Create a CML Session and execute the ModelPrototype.ipynb notebook
+
+##### 1.2 Deploy the Baseline Pipeline to a REST Endpoint via the CML API (V2)
+
+Using bar on the left, open the CICD.ipynb notebook and execute all cells
+
+##### 1.3 Get Acquainted with the Inference Job
+
+As instructed int he CICD.ipynb notebook, return to the CML Project home and observe CML Job execution by opening the Jobs tab
+
+When the Inference Job finally runs, open the Job History tab and then the Monitoring tab to observe inference results in real time
+
+
+#### 2. Building Pipelines in the Cloudera Data Engineering Data Service
+
+##### 2.1 Create an Airflow Job
+
+The cde_jobs folder in the CML project home contains a series of CDE Jobs. Open it and download all files to your local computer.
+
+Navigate to Create a CDE Virtual Cluster and create a Job for each file contained in the folder. **WIP Add more instructions here**
+
+Finally, create a CDE Job of Type Airflow using the airflow_dag_mlops_success.py. Choose a name of your choice. Execute the Job.
+
+##### 2.2 Airflow Job Execution
+
+While the job is executing, open the Airflow UI and open the Code tab. Familiarize yourself with the DAG and notice the different Cloudera Operators in use.
+
+* The CDEJobOperator executes a simple Spark ETL Job. We use this to load some fresh data into the Iceberg table.
+* The CMLJobOperator allows you to trigger CML Job execution. Notice this is configured to run the same CML Jobs we executed above.
+* The CDWJobOperator performs a simple query to report on current inference metrics. It allows other stakeholders to have a pulse on the Model's ROI. 
+
+The Airflow DAG is executing. Hover over to the Tree View and Graph Views and monitor execution of the whole pipeline in real time
+
+
+#### 3. Pipeline Reproducibility in the Cloudera Data Engineering Data Service
+
+##### 3.1 Create a failing Airflow Job and Execute 
+
+Create a new CDE Job with the batch_load_fail.py script, and a new Airflow Job with the airflow_dag_mlops_fail.py job
+
+Execute the new Airflow Job and observe the pipeline fail from the Tree View in the Airflow UI
+
+##### 3.2 Troubleshoot the new Airflow DAG
+
+Open the Graph View and explore the interface. Can you tell what went wrong? 
+
+The data loaded by the Spark ETL job includes some categorical types but this caused the CML Jobs to fail.
+
+Notice that although the CI/CD pipeline (CML Jobs) failed, the old model endpoint is still alive and kicking. The model endpoint is containerized and is thus isolated from any failures in the other stages of the pipeline. 
+
+##### 3.3 Reproduce the Original Dataset used for Model Training
+
+Navigate back to your CML project, explore the Iceberg table via Spark SQL and in particular, roll back the data to the original snapshot.
+
+Open the ModelPrototype.ipynb notebook and inspect the Spark pipeline. Can you tell why the TrainModelJob.py script failed?
+
+It failed because the pipeline transformers don't include a StringIndexer capable of handling categorical data.
+
+Let's fix it... replace the code in the make_pipeline method with the following code
+
+** Insert code here or create new script?? **
+
+Now rerun the entire notebook. Notice you are retraining the same model with the same data you used originally, although your Spark ML Pipeline is slightly changed. 
+
+This is important as the development and tuning work was originally performed on the original dataset. If you retrain the model on the new data you will likely run into new biases, errors, and have to dive back into model tuning. 
+
+And that is not even assuming you don't have to rerun the pipeline through internal validation and compliance processes!
+
+###### When Models fail you rarely have time to redo everything from scratch. By quickly accessing each version of the data you can fix the problem within a limited timeframe and perform more detailed post-mortem analysis. 
+
+##### 3.4 Execute the new Airflow DAG in the Data Engineering Data Service
+
+Navigate back to your CDE Virtual Cluster. Execute the same Airflow DAG and observe as it succeeds this time. 
+
+![alt text](images/ml-lifecycle-automation.png)
+
+
+#### Final Conclusions
+
+Congratulations! You have not only created an end to end ML Ops pipeline but you have remedied a production failure.
+
+In summary:
+
+* Machine Learning pipelines require a ML platform that can provide seamless transition between the Development and Deployment phases of a ML project, as well as robust integrations with Data Engineering services outside of the ML platform's perimeter.
+* A unified architecture allows Metadata, Security and Lineage to be interoperable across applications and use cases. This is not possible with platforms designed on individual frameworks because implementing security, lineage and metadata becomes a complex implementation challenge.
+* Apache Iceberg provides an unified table format and the ability to reproduce Edge2AI applications to any previous state. This is a key aspect for Production Robust Use Cases as well as Regulatory Compliance, and more.  
+
+![alt text](images/ml-lifecycle-cdpplatform-hybrid.png)
+
+##### Thank you for completing this demo! 
+
+![alt text](images/clouderalogo.png)
+
+
+
 
