@@ -1,19 +1,13 @@
 !pip3 install -r requirements.txt
 
 import os
-cluster = os.getenv("CDSW_DOMAIN")
-
-# If you are not on a TLS enabled cluster (your cluster url starts with ‘http’),
-# please use the following command instead.
-# !pip3 install http://{cluster}/api/v2/python.tar.gz
-!pip3 install https://{cluster}/api/v2/python.tar.gz
-
-  
-from cmlapi.utils import Cursor
 import cmlapi
+from cmlapi.utils import Cursor
 import string
 import random
 import json
+
+cluster = os.getenv("CDSW_DOMAIN")
 
 try:
     client = cmlapi.default_client()
@@ -26,18 +20,11 @@ session_id
 # List projects using the default sort and default page size (10)
 client.list_projects()
 
-project_id = "p4b4-1yyp-flae-ag2z" 
-
-# cursor also supports search_filter
-# cursor = Cursor(client.list_runtimes, 
-#                 search_filter = json.dumps({"image_identifier":"jupyter"}))
-cursor = Cursor(client.list_runtimes)
-runtimes = cursor.items()
-for rt in runtimes:
-    print(rt.image_identifier)
+project_id = os.environ["CDSW_PROJECT_ID"]
 
 ### CREATE AN ENDPOINT AND PUSH THE TF MODEL ###
 
+#Would be nice to name it with job id rather than session id
 modelReq = cmlapi.CreateModelRequest(
     name = "demo-model-" + session_id,
     description = "model created for demo",
@@ -54,8 +41,8 @@ model_build_request = cmlapi.CreateModelBuildRequest(
     function_name = "predict",
     kernel = "python3"
     #runtime_identifier = "docker.repository.cloudera.com/cdsw/ml-runtime-workbench-python3.8-standard:2021.02.1-b2"
-
 )
+
 modelBuild = client.create_model_build(
     model_build_request, project_id, model.id
 )

@@ -1,145 +1,81 @@
-!pip3 install -r requirements.txt
+# ###########################################################################
+#
+#  CLOUDERA APPLIED MACHINE LEARNING PROTOTYPE (AMP)
+#  (C) Cloudera, Inc. 2021
+#  All rights reserved.
+#
+#  Applicable Open Source License: Apache 2.0
+#
+#  NOTE: Cloudera open source products are modular software products
+#  made up of hundreds of individual components, each of which was
+#  individually copyrighted.  Each Cloudera open source product is a
+#  collective work under U.S. Copyright Law. Your license to use the
+#  collective work is as provided in your written agreement with
+#  Cloudera.  Used apart from the collective work, this file is
+#  licensed for your use pursuant to the open source license
+#  identified above.
+#
+#  This code is provided to you pursuant a written agreement with
+#  (i) Cloudera, Inc. or (ii) a third-party authorized to distribute
+#  this code. If you do not have a written agreement with Cloudera nor
+#  with an authorized and properly licensed third party, you do not
+#  have any rights to access nor to use this code.
+#
+#  Absent a written agreement with Cloudera, Inc. (“Cloudera”) to the
+#  contrary, A) CLOUDERA PROVIDES THIS CODE TO YOU WITHOUT WARRANTIES OF ANY
+#  KIND; (B) CLOUDERA DISCLAIMS ANY AND ALL EXPRESS AND IMPLIED
+#  WARRANTIES WITH RESPECT TO THIS CODE, INCLUDING BUT NOT LIMITED TO
+#  IMPLIED WARRANTIES OF TITLE, NON-INFRINGEMENT, MERCHANTABILITY AND
+#  FITNESS FOR A PARTICULAR PURPOSE; (C) CLOUDERA IS NOT LIABLE TO YOU,
+#  AND WILL NOT DEFEND, INDEMNIFY, NOR HOLD YOU HARMLESS FOR ANY CLAIMS
+#  ARISING FROM OR RELATED TO THE CODE; AND (D)WITH RESPECT TO YOUR EXERCISE
+#  OF ANY RIGHTS GRANTED TO YOU FOR THE CODE, CLOUDERA IS NOT LIABLE FOR ANY
+#  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, PUNITIVE OR
+#  CONSEQUENTIAL DAMAGES INCLUDING, BUT NOT LIMITED TO, DAMAGES
+#  RELATED TO LOST REVENUE, LOST PROFITS, LOSS OF INCOME, LOSS OF
+#  BUSINESS ADVANTAGE OR UNAVAILABILITY, OR LOSS OR CORRUPTION OF
+#  DATA.
+#
+# ###########################################################################
 
-import cdsw, time, os, random, json
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.metrics import classification_report
-from cmlbootstrap import CMLBootstrap
-import seaborn as sns
-import copy
-from pyspark.sql import SparkSession
-from pyspark.sql.types import *
+## Part 7b - Model Operations - Visualising Model Metrics
 
-### MODEL WARMUP ###
+# This is a continuation of the previous process started in the
+# `7a_ml_ops_simulations.py` script.
+# Here we will load in the metrics saved to the model database in the previous step
+# into a Pandas dataframe, and display different features as graphs.
 
-!pip3 install -r requirements.txt
+# ```python
+# help(cdsw.read_metrics)
+# Help on function read_metrics in module cdsw:
+#
+# read_metrics(model_deployment_crn=None, start_timestamp_ms=None, end_timestamp_ms=None, model_crn=None, model_build_crn=None)
+#    Description
+#    -----------
+#
+#    Read metrics data for given Crn with start and end time stamp
+#
+#    Parameters
+#    ----------
+#    model_deployment_crn: string
+#        model deployment Crn
+#    model_crn: string
+#        model Crn
+#    model_build_crn: string
+#        model build Crn
+#    start_timestamp_ms: int, optional
+#        metrics data start timestamp in milliseconds , if not passed
+#        default value 0 is used to fetch data
+#    end_timestamp_ms: int, optional
+#        metrics data end timestamp in milliseconds , if not passed
+#        current timestamp is used to fetch data
+#
+#    Returns
+#    -------
+#    object
+#        metrics data
+# ```
 
-import pandas as pd
-import tensorflow as tf
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import *
-from helpers import plot_decision_boundary
-
-spark = SparkSession\
-    .builder\
-    .appName("PythonSQL")\
-    .config("spark.hadoop.fs.s3a.s3guard.ddb.region","us-east-2")\
-    .config("spark.yarn.access.hadoopFileSystems","s3a://gd01-uat2/")\
-    .getOrCreate()
-
-sparkDF = spark.sql("SELECT * FROM DEFAULT.circles")
-
-df = sparkDF.toPandas()
-
-
-# Get the various Model CRN details
-HOST = os.getenv("CDSW_API_URL").split(":")[0] + "://" + os.getenv("CDSW_DOMAIN")
-USERNAME = os.getenv("CDSW_PROJECT_URL").split("/")[6]
-API_KEY = os.getenv("CDSW_API_KEY")
-PROJECT_NAME = os.getenv("CDSW_PROJECT")
-
-cml = CMLBootstrap(HOST, USERNAME, API_KEY, PROJECT_NAME)
-
-# Get newly deployed churn model details using cmlbootstrapAPI
-models = cml.get_models({})
-churn_model_details = [
-    model
-    for model in models
-    if model["creator"]["username"] == USERNAME
-    and model["project"]["slug"] == PROJECT_NAME
-][0]
-latest_model = cml.get_model(
-    {
-        "id": churn_model_details["id"],
-        "latestModelDeployment": True,
-        "latestModelBuild": True,
-    }
-)
-
-Model_CRN = latest_model["crn"]
-Deployment_CRN = latest_model["latestModelDeployment"]["crn"]
-model_endpoint = (
-    HOST.split("//")[0] + "//modelservice." + HOST.split("//")[1] + "/model"
-)
-
-# This will randomly return True for input and increases the likelihood of returning
-# true based on `percent`
-def churn_error(item, percent):
-    if random.random() < percent:
-        return True
-    else:
-        return True if item == "Yes" else False
-
-
-# Get 1000 samples
-df_sample = df.sample(1000)
-
-df_sample.groupby("label")["label"].count()
-
-#df_sample_clean = (
-#    df_sample.replace({"SeniorCitizen": {"1": "Yes", "0": "No"}})
-#    .replace(r"^\s$", np.nan, regex=True)
-#    .dropna()
-#)
-
-# Create an array of model responses.
-response_labels_sample = []
-
-# Run Similation to make 1000 calls to the model with increasing error
-percent_counter = 0
-percent_max = len(df_sample)
-
-for record in json.loads(df_sample.to_json(orient="records")):
-    print("Added {} records".format(percent_counter)) if (
-        percent_counter % 50 == 0
-    ) else None
-    percent_counter += 1
-    no_churn_record = copy.deepcopy(record)
-    no_churn_record.pop("label")
-    # **note** this is an easy way to interact with a model in a script
-    
-    rec = {'vals':[no_churn_record['X0'], no_churn_record['X1']]}
-    response = cdsw.call_model(latest_model["accessKey"], rec)
-    response_labels_sample.append(
-        {
-            "uuid": response["response"]["uuid"],
-            "final_label": churn_error(record["label"], percent_counter / percent_max),
-            "response_label": response["response"]["prediction"],
-            "timestamp_ms": int(time.time() * 1000),
-        }
-    )
-
-# The "ground truth" loop adds the updated actual label value and an accuracy measure
-# every 100 calls to the model.
-for index, vals in enumerate(response_labels_sample):
-    print("Update {} records".format(index)) if (index % 50 == 0) else None
-    cdsw.track_delayed_metrics({"final_label": vals["final_label"]}, vals["uuid"])
-    if index % 100 == 0:
-        start_timestamp_ms = vals["timestamp_ms"]
-        final_labels = []
-        response_labels = []
-        response_probabs = []
-    final_labels.append(int(vals["final_label"]))
-    response_labels.append(int(vals["response_label"]))
-    response_probabs.append(vals["response_label"])
-    
-    if index % 100 == 99:
-        print("Adding accuracy metrc")
-        end_timestamp_ms = vals["timestamp_ms"]
-        accuracy = classification_report(
-            final_labels, response_labels, output_dict=True
-        )["accuracy"]
-        cdsw.track_aggregate_metrics(
-            {"accuracy": accuracy},
-            start_timestamp_ms,
-            end_timestamp_ms,
-            model_deployment_crn=Deployment_CRN,
-        )
-        
-        
-### MODEL INFERENCE ###
-        
 import cdsw, time, os
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -148,32 +84,26 @@ from sklearn.metrics import classification_report
 from cmlbootstrap import CMLBootstrap
 import seaborn as sns
 import sqlite3
+import cmlapi
+from src.api import ApiUtility
 
-# Get newly deployed churn model details using cmlbootstrapAPI
+# You can access all models with API V2
+client = cmlapi.default_client()
+
+project_id = os.environ["CDSW_PROJECT_ID"]
+client.list_models(project_id)
+
+# You can use an APIV2-based utility to access the latest model's metadata. For more, explore the src folder
+apiUtil = ApiUtility()
+
+Model_AccessKey = apiUtil.get_latest_deployment_details_allmodels()["model_access_key"]
+Deployment_CRN = apiUtil.get_latest_deployment_details_allmodels()["latest_deployment_crn"]
+
+# Get the various Model Endpoint details
 HOST = os.getenv("CDSW_API_URL").split(":")[0] + "://" + os.getenv("CDSW_DOMAIN")
-USERNAME = os.getenv("CDSW_PROJECT_URL").split("/")[6]  # args.username  # "vdibia"
-API_KEY = os.getenv("CDSW_API_KEY")
-PROJECT_NAME = os.getenv("CDSW_PROJECT")
-
-cml = CMLBootstrap(HOST, USERNAME, API_KEY, PROJECT_NAME)
-
-models = cml.get_models({})
-churn_model_details = [
-    model
-    for model in models
-    if model["creator"]["username"] == USERNAME
-    and model["project"]["slug"] == PROJECT_NAME
-][0]
-latest_model = cml.get_model(
-    {
-        "id": churn_model_details["id"],
-        "latestModelDeployment": True,
-        "latestModelBuild": True,
-    }
+model_endpoint = (
+    HOST.split("//")[0] + "//modelservice." + HOST.split("//")[1] + "/model"
 )
-
-Model_CRN = latest_model["crn"]
-Deployment_CRN = latest_model["latestModelDeployment"]["crn"]
 
 # Read in the model metrics dict
 model_metrics = cdsw.read_metrics(
@@ -203,20 +133,20 @@ sns.set_style("whitegrid")
 sns.despine(left=True, bottom=True)
 
 # Plot metrics.probability
-#prob_metrics = metrics_df.dropna(subset=["metrics.probability"]).sort_values(
-#    "startTimeStampMs"
-#)
-#sns.lineplot(
-#    x=range(len(prob_metrics)), y="metrics.probability", data=prob_metrics, color="grey"
-#)
+prob_metrics = metrics_df.dropna(subset=["metrics.probability"]).sort_values(
+    "startTimeStampMs"
+)
+sns.lineplot(
+    x=range(len(prob_metrics)), y="metrics.probability", data=prob_metrics, color="grey"
+)
 
 # Plot processing time
 time_metrics = metrics_df.dropna(subset=["processing_time"]).sort_values(
     "startTimeStampMs"
 )
-#sns.lineplot(
-#    x=range(len(prob_metrics)), y="processing_time", data=prob_metrics, color="grey"
-#)
+sns.lineplot(
+    x=range(len(prob_metrics)), y="processing_time", data=prob_metrics, color="grey"
+)
 
 # Plot model accuracy drift over the simulated time period
 agg_metrics = metrics_df.dropna(subset=["metrics.accuracy"]).sort_values(
