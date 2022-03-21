@@ -18,7 +18,7 @@ session_id = "".join([random.choice(string.ascii_lowercase) for _ in range(6)])
 session_id
 
 # List projects using the default sort and default page size (10)
-client.list_projects()
+client.list_projects(page_size = 20)
 
 project_id = os.environ["CDSW_PROJECT_ID"]
 
@@ -31,6 +31,7 @@ modelReq = cmlapi.CreateModelRequest(
     project_id = project_id,
     disable_authentication = True
 )
+
 model = client.create_model(modelReq, project_id)
 
 model_build_request = cmlapi.CreateModelBuildRequest(
@@ -39,8 +40,9 @@ model_build_request = cmlapi.CreateModelBuildRequest(
     comment = "test comment",
     file_path = "models/model_endpoint.py",
     function_name = "predict",
-    kernel = "python3"
-    #runtime_identifier = "docker.repository.cloudera.com/cdsw/ml-runtime-workbench-python3.8-standard:2021.02.1-b2"
+    kernel = "python3",
+    runtime_identifier = "docker.repository.cloudera.com/cdsw/ml-runtime-workbench-python3.7-standard:2021.09.1-b5"
+    #runtime_addon_identifiers = "spark311-13-hf1"
 )
 
 modelBuild = client.create_model_build(
@@ -50,7 +52,9 @@ modelBuild = client.create_model_build(
 model_deployment = cmlapi.CreateModelDeploymentRequest(
         project_id = project_id, 
         model_id = model.id, 
-        build_id = modelBuild.id
+        build_id = modelBuild.id, 
+        cpu = 1.00,
+        memory = 2.00
     )
 
 model_deployment_response = client.create_model_deployment(

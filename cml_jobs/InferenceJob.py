@@ -83,21 +83,21 @@ import numpy as np
 from sklearn.metrics import classification_report
 from cmlbootstrap import CMLBootstrap
 import seaborn as sns
-import sqlite3
 import cmlapi
 from src.api import ApiUtility
+import sqlite3
 
 # You can access all models with API V2
 client = cmlapi.default_client()
 
 project_id = os.environ["CDSW_PROJECT_ID"]
-client.list_models(project_id)
 
 # You can use an APIV2-based utility to access the latest model's metadata. For more, explore the src folder
 apiUtil = ApiUtility()
 
 Model_AccessKey = apiUtil.get_latest_deployment_details_allmodels()["model_access_key"]
 Deployment_CRN = apiUtil.get_latest_deployment_details_allmodels()["latest_deployment_crn"]
+Model_CRN = apiUtil.get_latest_deployment_details_allmodels()["model_crn"]
 
 # Get the various Model Endpoint details
 HOST = os.getenv("CDSW_API_URL").split(":")[0] + "://" + os.getenv("CDSW_DOMAIN")
@@ -133,11 +133,11 @@ sns.set_style("whitegrid")
 sns.despine(left=True, bottom=True)
 
 # Plot metrics.probability
-prob_metrics = metrics_df.dropna(subset=["metrics.probability"]).sort_values(
+prob_metrics = metrics_df.dropna(subset=["metrics.accuracy"]).sort_values(
     "startTimeStampMs"
 )
 sns.lineplot(
-    x=range(len(prob_metrics)), y="metrics.probability", data=prob_metrics, color="grey"
+    x=range(len(prob_metrics)), y="metrics.accuracy", data=prob_metrics, color="grey"
 )
 
 # Plot processing time

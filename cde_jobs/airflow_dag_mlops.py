@@ -80,26 +80,20 @@ dag = DAG(
     is_paused_upon_creation=False
 )
 
-
-
-
-
 batch_load_job = CDEJobRunOperator(
     task_id='batch_load',
     retries=3,
     dag=dag,
-    job_name='BatchLoad'
+    job_name='BatchLoadIceberg'
 )
 
 cml_job = CMLJobRunOperator(
     task_id='cml_job_task',
-    project='MLOps',
+    project='ML Ops',
     job='TrainModelJob', 
     dag=dag)
 
 start = DummyOperator(task_id='start', dag=dag)
 end = DummyOperator(task_id='end', dag=dag)
-
-
 
 start >> batch_load_job >> cml_job >> end

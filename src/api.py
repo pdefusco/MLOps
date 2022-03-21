@@ -82,13 +82,13 @@ class ApiUtility:
 
         # gather model details
         models = (
-            self.client.list_models(project_id=project_id, async_req=True)
+            self.client.list_models(project_id=project_id, async_req=True, page_size = 50)
             .get()
             .to_dict()
         )
         model_info = [
             model for model in models["models"]
-        ][0]
+        ][-1]
 
         model_id = model_info["id"]
         model_crn = model_info["crn"]
@@ -97,7 +97,7 @@ class ApiUtility:
         # gather latest build details
         builds = (
             self.client.list_model_builds(
-                project_id=project_id, model_id=model_id, async_req=True
+                project_id=project_id, model_id=model_id, async_req=True, page_size = 50
             )
             .get()
             .to_dict()
@@ -113,6 +113,7 @@ class ApiUtility:
                 model_id=model_id,
                 build_id=build_id,
                 async_req=True,
+                page_size = 50
             )
             .get()
             .to_dict()
@@ -122,7 +123,6 @@ class ApiUtility:
         model_deployment_crn = deployment_info["crn"]
 
         return {
-            "model_name": model_name,
             "model_id": model_id,
             "model_crn": model_crn,
             "model_access_key": model_access_key,
@@ -141,7 +141,7 @@ class ApiUtility:
 
         # gather model details
         models = (
-            self.client.list_models(project_id=project_id, async_req=True)
+            self.client.list_models(project_id=project_id, async_req=True, page_size = 50)
             .get()
             .to_dict()
         )
@@ -156,7 +156,7 @@ class ApiUtility:
         # gather latest build details
         builds = (
             self.client.list_model_builds(
-                project_id=project_id, model_id=model_id, async_req=True
+                project_id=project_id, model_id=model_id, async_req=True, page_size = 50
             )
             .get()
             .to_dict()
@@ -172,6 +172,7 @@ class ApiUtility:
                 model_id=model_id,
                 build_id=build_id,
                 async_req=True,
+                page_size = 50
             )
             .get()
             .to_dict()
@@ -238,8 +239,7 @@ class ApiUtility:
 
         # configure runtime if available
         if (
-            self.client.get_project(os.environ["CDSW_PROJECT_ID"]).default_engine_type
-            != "legacy_engine"
+            self.client.get_project(os.environ["CDSW_PROJECT_ID"]).default_engine_type != "legacy_engine"
         ):
             ipt["runtime_identifier"] = self.get_latest_standard_runtime()
             del ipt["kernel"]

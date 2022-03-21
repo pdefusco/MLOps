@@ -1,5 +1,4 @@
 sklearn
-tensorflow
 matplotlib
 pandas
 pyyaml

@@ -1,9 +1,9 @@
 !pip3 install -r requirements.txt
 
 import pandas as pd
+import numpy as np
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
-from helpers.plot_decision_boundary import *
 import matplotlib.pyplot as plt
 from pyspark.ml.pipeline import PipelineModel
 
@@ -18,7 +18,7 @@ spark = SparkSession.builder\
   .getOrCreate()
 
 #Explore putting GE here
-sparkDF = spark.sql("SELECT * FROM spark_catalog.default.mlops_iceberg_table")
+sparkDF = spark.sql("SELECT * FROM spark_catalog.default.mlops_batch_load_table")
 
 #Put open source model registry call here
 mPath = "s3a://demo-aws-go02/data/newdir"
@@ -51,4 +51,13 @@ def get_confusion_matrix(spark_df):
     sns.heatmap(cf_matrix, annot=labels, fmt="", cmap='Blues')
 
 get_confusion_matrix(df_model)
-    
+
+try: 
+    df_model.writeTo("spark_catalog.default.mlops_staging_scores_table").create()
+    df_model.writeTo("spark_catalog.default.mlops_scores_table").create()
+except:
+    spark.sql("INSERT INTO spark_catalog.default.mlops_scores_table SELECT * FROM spark_catalog.default.mlops_staging_scores_table").show()
+else:
+    spark.sql("INSERT INTO spark_catalog.default.mlops_scores_table SELECT * FROM spark_catalog.default.mlops_staging_scores_table").show()
+
+spark.sql("DROP TABLE IF EXISTS spark_catalog.default.mlops_staging_scores_table")

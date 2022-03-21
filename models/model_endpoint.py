@@ -198,37 +198,43 @@
 # A current list of known limitations are
 # [documented here](https://docs.cloudera.com/machine-learning/cloud/models/topics/ml-models-known-issues-and-limitations.html).
 
-import cdsw, numpy
+### Place holder ###
 
-# Load the model saved earlier.
-em = ExplainedModel(model_name="telco_linear", data_dir="/home/cdsw")
+import cdsw, numpy, sklearn
+from cmlapi.utils import Cursor
+from sklearn.linear_model import LogisticRegression
+from joblib import dump, load
+import pandas as pd
+import json
 
+clf = load('/home/cdsw/models/logreg.joblib')
 
-
-# *Note:* If you want to test this in a session, comment out the line
-# `@cdsw.model_metrics` below. Don't forget to uncomment when you
-# deploy, or it won't write the metrics to the database
-
+#data = {
+#  "acc_now_delinq": "1",
+#  "acc_open_past_24mths": "2",
+#  "annual_inc": "3",
+#  "avg_cur_bal": "4",
+#  "funded_amnt": "5"
+#}
 
 @cdsw.model_metrics
-# This is the main function used for serving the model. It will take in the JSON formatted arguments , calculate the probablity of
-# churn and create a LIME explainer explained instance and return that as JSON.
-def predict(args):
-    data = dict(ChainMap(args, em.default_data))
-    data = em.cast_dct(data)
-    probability, explanation = em.explain_dct(data)
+def predict(data):
+    
+    df = pd.DataFrame(data, index=[0])
+    df.columns = ['acc_now_delinq', 'acc_open_past_24mths', 'annual_inc', 'avg_cur_bal', 'funded_amnt']
 
-    # Track inputs
-    cdsw.track_metric("input_data", data)
+    df = df.astype('float')
 
-    # Track our prediction
-    cdsw.track_metric("probability", probability)
+    tracked_data = df.astype('str').to_dict('records')[0]
 
-    # Track explanation
-    cdsw.track_metric("explanation", explanation)
-
-    return {"data": dict(data), "probability": probability, "explanation": explanation}
-
+    prediction = str(clf.predict(df)[0])
+    
+    # Track prediction
+    cdsw.track_metric("prediction", str(prediction))
+    
+    cdsw.track_metric("data", df.to_json())
+    
+    return {'input_data': str(tracked_data), 'prediction': str(prediction)}
 
 # To test this is a session, comment out the `@cdsw.model_metrics`  line,
 # uncomment the and run the two rows below.
