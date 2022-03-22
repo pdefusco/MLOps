@@ -4,8 +4,8 @@ from pyspark.sql.functions import *
 #create version without iceberg extension options for CDE
 spark = SparkSession.builder\
   .appName("0.2 - Batch Load into Icerberg Table") \
-  .config("spark.hadoop.fs.s3a.s3guard.ddb.region", "us-east-2")\
-  .config("spark.yarn.access.hadoopFileSystems", "s3a://demo-aws-go02")\
+  .config("spark.hadoop.fs.s3a.s3guard.ddb.region", "us-west-2")\
+  .config("spark.kerberos.access.hadoopFileSystems", "s3a://goes-se-hybrid01")\
   .config("spark.jars","/home/cdsw/lib/iceberg-spark3-runtime-0.9.1.1.13.317211.0-9.jar") \
   .config("spark.sql.extensions","org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions") \
   .config("spark.sql.catalog.spark_catalog","org.apache.iceberg.spark.SparkSessionCatalog") \
@@ -14,7 +14,7 @@ spark = SparkSession.builder\
 
 #Explore putting GE here to unit test column types
 try:
-    df = spark.read.parquet('s3a://demo-aws-go02/datalake/pdefusco/LoanStats_2015_subset.parquet',   
+    df = spark.read.parquet('s3a://goes-se-hybrid01/datalake/pdefusco/LoanStats_2015_subset.parquet',   
         header=True,
         sep=',',
         nullValue='NA')

@@ -2,6 +2,7 @@
 
 import pandas as pd
 import numpy as np
+import os
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
 import matplotlib.pyplot as plt
@@ -9,19 +10,19 @@ from pyspark.ml.pipeline import PipelineModel
 
 spark = SparkSession.builder\
   .appName("1.1 - Train Model") \
-  .config("spark.hadoop.fs.s3a.s3guard.ddb.region", "us-east-2")\
-  .config("spark.yarn.access.hadoopFileSystems", "s3a://demo-aws-go02")\
+  .config("spark.hadoop.fs.s3a.s3guard.ddb.region", os.environ["REGION"])\
+  .config("spark.yarn.access.hadoopFileSystems", os.environ["STORAGE"])\
   .config("spark.jars","/home/cdsw/lib/iceberg-spark3-runtime-0.9.1.1.13.317211.0-9.jar") \
   .config("spark.sql.extensions","org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions") \
   .config("spark.sql.catalog.spark_catalog","org.apache.iceberg.spark.SparkSessionCatalog") \
   .config("spark.sql.catalog.spark_catalog.type","hive") \
   .getOrCreate()
-
+#"spark.yarn.access.hadoopFileSystems" spark.kerberos.access.hadoopFileSystems
 #Explore putting GE here
-sparkDF = spark.sql("SELECT * FROM spark_catalog.default.mlops_batch_load_table")
+sparkDF = spark.sql("SELECT * FROM spark_catalog.default.mlops_batch_load_table") #mlops_batch_load_table
 
 #Put open source model registry call here
-mPath = "s3a://demo-aws-go02/data/newdir"
+mPath = os.environ["STORAGE"]+"/data/newdir"
 persistedModel = PipelineModel.load(mPath)
 
 df_model = persistedModel.transform(sparkDF)
